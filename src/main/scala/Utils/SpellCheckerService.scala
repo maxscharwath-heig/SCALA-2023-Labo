@@ -15,6 +15,8 @@ trait SpellCheckerService:
     */
   def stringDistance(s1: String, s2: String): Int
 
+  def stringDistanceRecursive(s1: String, s2: String): Int
+
   /**
     * Get the syntactically closest word in the dictionary from the given misspelled word, using the "stringDistance"
     * function. If the word is a number or a pseudonym, this function just returns it.
@@ -32,5 +34,19 @@ class SpellCheckerImpl(val dictionary: Map[String, String]) extends SpellChecker
         case (h, ((d, v), c2)) => Math.min(Math.min(h + 1, v + 1), d + (if (c1 == c2) 0 else 1))
       }
     }.last
-  def getClosestWordInDictionary(misspelledWord: String): String = dictionary.keys.minBy(stringDistance(misspelledWord, _))
+
+  def stringDistanceRecursive(s1: String, s2: String): Int =
+    (s1, s2) match
+      case ("", s2) => s2.length
+      case (s1, "") => s1.length
+      case (s1, s2) =>
+        val cost = if s1.last == s2.last then 0 else 1
+        Math.min(
+          Math.min(
+            stringDistanceRecursive(s1.init, s2) + 1,
+            stringDistanceRecursive(s1, s2.init) + 1
+          ),
+          stringDistanceRecursive(s1.init, s2.init) + cost
+        )
+  def getClosestWordInDictionary(misspelledWord: String): String = dictionary.keys.minBy(stringDistanceRecursive(misspelledWord, _))
 end SpellCheckerImpl
