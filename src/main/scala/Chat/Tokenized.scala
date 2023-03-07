@@ -12,5 +12,10 @@ trait Tokenized:
 
 class TokenizedImpl(val tokens: Array[(String, Token)]) extends Tokenized:
   // TODO - Part 1 Step 3
-  def nextToken(): (String, Token) = ???
+  def nextToken(): (String, Token) = {
+    // TODO: a faire
+    tokens match
+      case Array() => ("EOL", Token.EOL)
+      case Array((token, tokenType), rest @ _*) => (token, tokenType)
+  }
 end TokenizedImpl
