@@ -19,6 +19,12 @@ object MainTokenizer:
         for i <- 2 to 6 do
           println(s"Nombre de *clinks* pour un santé de $i personnes : ${ClinksCalculator.calculateCombination(i, 2)}.")
         true  // continue loop
+      case "distance" =>
+        val spellCheckerSvc: SpellCheckerService = SpellCheckerImpl(Dictionary.dictionary)
+        val word = StdIn.readLine("Entrez un mot : ")
+        val closestWord = spellCheckerSvc.getClosestWordInDictionary(word)
+        println(s"Le mot le plus proche de $word est $closestWord.")
+        true  // continue loop
       case s =>
         // Tokenize the user input.
         val tokenizer = tokenizerSvc.tokenize(s)

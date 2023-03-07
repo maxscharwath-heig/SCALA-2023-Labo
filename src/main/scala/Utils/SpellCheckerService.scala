@@ -25,9 +25,12 @@ trait SpellCheckerService:
 end SpellCheckerService
 
 class SpellCheckerImpl(val dictionary: Map[String, String]) extends SpellCheckerService:
-  // TODO - Part 1 Step 2
-  def stringDistance(s1: String, s2: String): Int = ???
-
-  // TODO - Part 1 Step 2
-  def getClosestWordInDictionary(misspelledWord: String): String = ???
+  // Compute the Levenstein distance between two words
+  def stringDistance(s1: String, s2: String): Int =
+    ((0 to s2.length).toList /: s1.toList) { (prev, c1) =>
+      (prev zip prev.tail zip s2.toList).scanLeft(prev.head + 1) {
+        case (h, ((d, v), c2)) => Math.min(Math.min(h + 1, v + 1), d + (if (c1 == c2) 0 else 1))
+      }
+    }.last
+  def getClosestWordInDictionary(misspelledWord: String): String = dictionary.keys.minBy(stringDistance(misspelledWord, _))
 end SpellCheckerImpl
