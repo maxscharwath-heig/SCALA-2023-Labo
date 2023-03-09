@@ -11,11 +11,13 @@ trait Tokenized:
   def nextToken(): (String, Token)
 
 class TokenizedImpl(val tokens: Array[(String, Token)]) extends Tokenized:
-  // TODO - Part 1 Step 3
+  private var current = -1;
+
   def nextToken(): (String, Token) = {
-    // TODO: a faire
-    tokens match
-      case Array() => ("EOL", Token.EOL)
-      case Array((token, tokenType), rest @ _*) => (token, tokenType)
+    current += 1
+    if (current < tokens.length) {
+      return tokens(current)
+    }
+    return ("EOL", Token.EOL)
   }
 end TokenizedImpl
