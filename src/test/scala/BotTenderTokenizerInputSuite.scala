@@ -45,6 +45,7 @@ class BotTenderTokenizerInputSuite
     spellCheckerSvc.stringDistance("santé", "santy") should equal(1)
     spellCheckerSvc.stringDistance("test", "testing") should equal(3)
     spellCheckerSvc.stringDistance("bière", "target") should equal(5)
+    spellCheckerSvc.stringDistance("BONJOUR", "bonjour") should equal(7)
   }
 
   property("Should get the closest word in dictonnary") {
@@ -139,6 +140,31 @@ class BotTenderTokenizerInputSuite
     )
 
     val input = "bonuour ja veut 8 bbères et 5 crsoiasabsdts stppp..."
+    val tokens = tokenizerSvc.tokenize(input)
+
+    // Loop over the tokens and check if they are the same as the expected tokens
+    for (i <- 0 until expectedTokens.length) {
+      tokens.nextToken()._2 should equal(expectedTokens(i))
+    }
+  }
+
+  // test tricky inputs with multiple spaces and special characters and '
+
+  property("Should return the same result from example (e)") {
+    val expectedTokens: List[Chat.Token] = List(
+      Token.BONJOUR,
+      Token.JE,
+      Token.VOULOIR,
+      Token.NUM,
+      Token.PRODUIT,
+      Token.ET,
+      Token.NUM,
+      Token.PRODUIT,
+      Token.SVP,
+      Token.EOL
+    )
+
+    val input = "**bonjour,              j'aimerais 8 bières et 5 croissants, stp.... **"
     val tokens = tokenizerSvc.tokenize(input)
 
     // Loop over the tokens and check if they are the same as the expected tokens

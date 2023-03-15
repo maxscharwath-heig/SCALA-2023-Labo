@@ -27,6 +27,12 @@ class ClicksCalculatorTestSuite
     factorial(12) should equal(479001600)
   }
 
+  property("Factorial of -1 should throw an exception") {
+    assertThrows[IllegalArgumentException] {
+      factorial(-1)
+    }
+  }
+
   // Clinks tests
   property("Combination of 0 and 0 should be 1") {
     ClinksCalculator.calculateCombination(0, 0) should equal(1)
@@ -43,6 +49,18 @@ class ClicksCalculatorTestSuite
   property("Combination of 2 and 1 should throw an exception because k > n") {
     assertThrows[IllegalArgumentException] {
       ClinksCalculator.calculateCombination(1, 2)
+    }
+  }
+
+  property("Combination of -1 and 1 should throw an exception") {
+    assertThrows[IllegalArgumentException] {
+      ClinksCalculator.calculateCombination(-1, 1)
+    }
+  }
+
+  property("Combination of 1 and -1 should throw an exception") {
+    assertThrows[IllegalArgumentException] {
+      ClinksCalculator.calculateCombination(1, -1)
     }
   }
 

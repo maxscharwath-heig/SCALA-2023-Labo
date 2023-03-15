@@ -16,8 +16,10 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     */
   def tokenize(input: String): Tokenized = {
     // Remove punctuation
-    val sanitizedTokens =
-      input.replaceAll("[.,!?*]", "").replaceAll("[']", " ").split(" ")
+    val sanitizedTokens = input
+      .replaceAll("[.,!?*']+", " ")
+      .trim
+      .split("\\s+")
 
     // For every word, get the closest word in the dict and the corresponding token
     val tokens: Array[(String, Chat.Token)] = sanitizedTokens.map(token => {
