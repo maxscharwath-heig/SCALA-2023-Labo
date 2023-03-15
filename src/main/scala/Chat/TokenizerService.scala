@@ -19,9 +19,8 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     val sanitizedTokens =
       input.replaceAll("[.,!?*]", "").replaceAll("[']", " ").split(" ")
 
-    // Check if token is in dict
+    // For every word, get the closest word in the dict and the corresponding token
     val tokens: Array[(String, Chat.Token)] = sanitizedTokens.map(token => {
-      // Get the word that ensures it exists in the dict
       val word = spellCheckerSvc.getClosestWordInDictionary(token)
       (word, getDictionnaryToken(word))
     })
@@ -29,7 +28,13 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     return new TokenizedImpl(tokens)
   }
 
-  // Get the corresponding dictionnary token from a word
+  /** Get the corresponding token from a word of the dictionnary
+    *
+    * @param word
+    *   The word of the dictionnary
+    * @return
+    *   The corresponding token
+    */
   private def getDictionnaryToken(word: String): Token = {
     word match {
       case "bonjour"                            => Token.BONJOUR
