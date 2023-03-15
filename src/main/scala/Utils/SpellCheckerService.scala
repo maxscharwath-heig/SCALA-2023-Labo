@@ -1,3 +1,6 @@
+// SCALA - Labo 1
+// Nicolas Crausaz & Maxime Scharwath
+
 package Utils
 
 trait SpellCheckerService:
@@ -27,10 +30,32 @@ trait SpellCheckerService:
     *   the closest normalized word from "mispelledWord"
     */
   def getClosestWordInDictionary(misspelledWord: String): String
+
+  /** Check if the given word is a pseudonym.
+    * @param word
+    *   the word to check
+    * @return
+    *   true if the word is a pseudonym, false otherwise
+    */
+  def isAPseudonym(word: String): Boolean
+
+  /** Check if the given word is a number.
+    * @param word
+    *   the word to check
+    * @return
+    *   true if the word is a number, false otherwise
+    */
+  def isANumber(word: String): Boolean
+
 end SpellCheckerService
 
 class SpellCheckerImpl(val dictionary: Map[String, String])
     extends SpellCheckerService:
+
+  def isAPseudonym(word: String): Boolean = word.startsWith("_")
+
+  def isANumber(word: String): Boolean = word.forall(_.isDigit)
+
   // Compute the Levenstein distance between two words
   def stringDistance(s1: String, s2: String): Int =
     (s1, s2) match
@@ -48,26 +73,23 @@ class SpellCheckerImpl(val dictionary: Map[String, String])
 
   def getClosestWordInDictionary(misspelledWord: String): String = {
     // If the word is a number or a pseudo, we just return it
-    if misspelledWord.forall(_.isDigit) || misspelledWord.startsWith("_") then
-      misspelledWord
-    else {
-      var closestKey = ""
-      var closestDist = Int.MaxValue
+    if (isANumber(misspelledWord) || isAPseudonym(misspelledWord)) {
+      return misspelledWord
+    }
 
-      for (key, value) <- dictionary do {
+    val closest = dictionary
+      .foldLeft(("", Int.MaxValue))((acc, elem) => {
+        val (key, value) = elem
+        val (closestKey, closestDist) = acc
         val dist = stringDistance(key, misspelledWord)
 
-        // Smaller distance
-        if (dist < closestDist) {
-          closestKey = key
-          closestDist = dist
-        } // Egality, we get the first key sorted by alpha
-        else if (dist == closestDist && key < closestKey) {
-          closestKey = key
-          closestDist = dist
-        }
-      }
-      return dictionary(closestKey)
-    }
+        // Smaller distance, or egality: we get the first key sorted by alpha
+        if dist < closestDist || (dist == closestDist && key < closestKey) then
+          (key, dist)
+        else acc
+      })
+      ._1
+
+    return dictionary(closest)
   }
 end SpellCheckerImpl
