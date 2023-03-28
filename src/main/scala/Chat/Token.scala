@@ -1,13 +1,24 @@
 package Chat
 
 enum Token:
-  case // Terms
-    // TODO - Part 2 Step 1
+  case
     BONJOUR,
     JE,
     SVP,
     ASSOIFFE,
     AFFAME,
+    QUEL,
+    LE,
+    PRIX,
+    DE,
+    COMBIEN,
+    COUTER,
+    COMMANDER,
+    CONNAITRE,
+    MON,
+    ME,
+    SOLDE,
+    APPELLER,
     // Actions
     ETRE,
     VOULOIR,
@@ -16,6 +27,7 @@ enum Token:
     OU,
     // Products
     PRODUIT,
+    MARQUE,
     // Util
     PSEUDO,
     NUM,

@@ -13,3 +13,6 @@ object ExprTree:
   // Example cases
   case object Thirsty extends ExprTree
   case object Hungry extends ExprTree
+  case class Auth(username: String) extends ExprTree
+  case object Solde extends ExprTree
+  case object Price extends ExprTree // Ask for the price of a product

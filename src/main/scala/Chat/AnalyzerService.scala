@@ -25,4 +25,14 @@ class AnalyzerService(productSvc: ProductService,
       // Example cases
       case Thirsty => "Eh bien, la chance est de votre côté, car nous offrons les meilleures bières de la région !"
       case Hungry => "Pas de soucis, nous pouvons notamment vous offrir des croissants faits maisons !"
+      case Auth(name) => {
+        session.setCurrentUser(name)
+        s"Bonjour $name, que puis-je faire pour vous ?"
+      }
+      case Solde => {
+        session.getCurrentUser match
+          case Some(user) => s"Hello ${user}"
+          case None => "Vous n'êtes pas connecté, veuillez vous connecter pour accéder à votre solde."
+      }
+      case _ => "Je ne comprends pas votre demande."
 end AnalyzerService

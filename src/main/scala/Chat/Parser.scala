@@ -43,5 +43,34 @@ class Parser(tokenized: Tokenized):
       else if curToken == AFFAME then
         readToken()
         Hungry
+      else if curToken == PSEUDO then
+        val pseudo = eat(PSEUDO)
+        Auth(pseudo)
+      else if curToken == VOULOIR then
+        readToken()
+        if curToken == CONNAITRE then
+          readToken()
+          eat(MON)
+          readToken()
+          if curToken == SOLDE then
+            Solde
+        
+        expected(SOLDE)
       else expected(ASSOIFFE, AFFAME)
+    
+    else if curToken == QUEL then 
+      // readToken()
+      eat(ETRE)
+      eat(LE)
+      eat(PRIX)
+      eat(DE)
+      // Command
+      Price
+    
+    else if curToken == COMBIEN then
+        readToken()
+        eat(COUTER)
+        Price
+
+
     else expected(BONJOUR, JE)
