@@ -14,6 +14,7 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     * @return
     *   A Tokenizer which allows iteration over the tokens of the input
     */
+
   def tokenize(input: String): Tokenized = {
     // Remove punctuation
     val sanitizedTokens = input
@@ -56,4 +57,7 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     }
   }
 
+  // TODO - Part 1 Step 3
+  // TODO - Part 2 Step 1
+  // def tokenize(input: String): Tokenized = ???
 end TokenizerService
