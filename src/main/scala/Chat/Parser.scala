@@ -1,5 +1,7 @@
 package Chat
 
+import scala.quoted.Expr
+
 class UnexpectedTokenException(msg: String) extends Exception(msg) {}
 
 class Parser(tokenized: Tokenized):
@@ -36,14 +38,46 @@ class Parser(tokenized: Tokenized):
       s"Expected: $expectedTokens, found: $curToken"
     )
 
-  private def parseCommand() = {
+  private def parseProduct(): ExprTree = {
+    // TODO: add the defaults values
+    var name = ""
+    var quantity = 1
+    var brand = ""
 
+    if curToken == NUM then
+      quantity = Integer.parseInt(curValue)
+      readToken()
+    else expected(NUM)
+
+    // Getting product type
+    if curToken == PRODUIT then
+      name = curValue
+      readToken()
+    else expected(PRODUIT)
+
+    // Getting product brand (optional)
+    if curToken == MARQUE then
+      brand = curValue
+      readToken()
+    end if
+
+    println(s"$name, $brand, $quantity")
+    Product(name, brand, quantity)
+  }
+
+  private def parseCommand(): ExprTree = {
+    val product = parseProduct()
+    product
+  }
+
+  private def parsePseudonym(): ExprTree = {
+    val pseudo = eat(PSEUDO)
+    Auth(pseudo.substring(1)) // Remove the '_' before the pseudo
   }
 
   /** the root method of the parser: parses an entry phrase */
   // TODO - Part 2 Step 4
   def parsePhrases(): ExprTree =
-
     // BONJOUR (optional)
     if curToken == BONJOUR then readToken()
 
@@ -54,13 +88,11 @@ class Parser(tokenized: Tokenized):
       eat(LE)
       eat(PRIX)
       eat(DE)
-      // TODO: Command
-      Solde
+      Price(parseCommand())
     else if curToken == COMBIEN then
       readToken()
       eat(COUTER)
-      // TODO: Command
-      Solde
+      Price(parseCommand())
 
     // JE
     else if curToken == JE then
@@ -69,8 +101,8 @@ class Parser(tokenized: Tokenized):
       if curToken == VOULOIR then
         readToken()
         if curToken == COMMANDER then
-          // todo: command
-          Solde
+          readToken()
+          Command(parseCommand())
         else if curToken == CONNAITRE then
           readToken()
           eat(MON)
@@ -81,11 +113,13 @@ class Parser(tokenized: Tokenized):
       // ETRE [ASSOIFFE | AFFAME | PSEUDO]
       else if curToken == ETRE then
         readToken()
-        if curToken == ASSOIFFE then Thirsty
-        else if curToken == AFFAME then Hungry
-        else if curToken == PSEUDO then
-          val pseudo = eat(PSEUDO)
-          Auth(pseudo)
+        if curToken == ASSOIFFE then
+          readToken()
+          Thirsty
+        else if curToken == AFFAME then
+          readToken()
+          Hungry
+        else if curToken == PSEUDO then parsePseudonym()
         else expected(ASSOIFFE, AFFAME, PSEUDO)
 
       // ME APPELLER PSEUDO

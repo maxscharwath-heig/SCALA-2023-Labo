@@ -13,9 +13,9 @@ object ExprTree:
 
   // Actions
   case class Auth(username: String) extends ExprTree
-  case object Solde extends ExprTree
-  case object Price extends ExprTree
+  case class Price(products: ExprTree) extends ExprTree
   case class Command(products: ExprTree) extends ExprTree
+  case object Solde extends ExprTree
 
   // Products
   case class Product(name: String, brand: String, quantity: Int)

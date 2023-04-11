@@ -6,7 +6,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
 
   /** Default "solde" for new users
     */
-  private val DEFAULT_SOLDE = 100.0
+  private val DEFAULT_SOLDE = 30.0
 
   /** Compute the price of the current node, then returns it. If the node is not
     * a computational node, the method returns 0.0. For example if we had a "+"
@@ -17,8 +17,12 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
   // TODO - Part 2 Step 3
   def computePrice(t: ExprTree): Double = {
     t match
-      case Product(name, brand, quantity) =>
-        quantity * productSvc.getPrice(name, brand)
+      case Product(name, brand, quantity) => {
+        // If brand is not specified, use default brand
+        val b = if (brand == "") productSvc.getDefaultBrand(name) else brand
+        quantity * productSvc.getPrice(name, b)
+      }
+        
       case Command(products) => computePrice(products)
       case Or(left, right)  => Math.min(computePrice(left), computePrice(right))
       case And(left, right) => computePrice(left) + computePrice(right)
@@ -41,7 +45,9 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
       case Hungry =>
         "Pas de soucis, nous pouvons notamment vous offrir des croissants faits maisons !"
 
-      case Price => s"Cela coûte CHF ${computePrice(t)}"
+      case Price(_) => s"Cela coûte CHF ${computePrice(t)}"
+
+      case Product(name, brand, quantity) => s"$quantity $name $brand"
 
       case Auth(name) => {
         // If user does not exist, create it and add default solde
@@ -49,7 +55,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
           accountSvc.addAccount(name, DEFAULT_SOLDE)
 
         session.setCurrentUser(name)
-        s"Bonjour $name, !"
+        s"Bonjour $name !"
       }
 
       case Solde => {
@@ -68,7 +74,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
               "Vous n'avez pas assez d'argent pour effectuer cette commande."
             else {
               accountSvc.purchase(user, finalPrice)
-              "Votre commande a bien été prise en compte."
+              s"Voici donc ${inner(products)} ! Cela coûte $finalPrice et votre nouveau solde est de ${accountSvc.getAccountBalance(user)}"
             }
           }
           case None => "Veuillez d'abord vous identifier."
