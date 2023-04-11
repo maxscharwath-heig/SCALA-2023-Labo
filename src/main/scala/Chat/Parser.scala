@@ -1,6 +1,6 @@
 package Chat
 
-class UnexpectedTokenException(msg: String) extends Exception(msg){}
+class UnexpectedTokenException(msg: String) extends Exception(msg) {}
 
 class Parser(tokenized: Tokenized):
   import ExprTree._
@@ -15,7 +15,9 @@ class Parser(tokenized: Tokenized):
   /** Reads the next token and assigns it into the global variable curTuple */
   def readToken(): Unit = curTuple = tokenized.nextToken()
 
-  /** "Eats" the expected token and returns it value, or terminates with an error. */
+  /** "Eats" the expected token and returns it value, or terminates with an
+    * error.
+    */
   private def eat(token: Token): String =
     if token == curToken then
       val tmp = curValue
@@ -23,54 +25,73 @@ class Parser(tokenized: Tokenized):
       tmp
     else expected(token)
 
-  /** Complains that what was found was not expected. The method accepts arbitrarily many arguments of type Token */
+  /** Complains that what was found was not expected. The method accepts
+    * arbitrarily many arguments of type Token
+    */
   private def expected(token: Token, more: Token*): Nothing =
     expected(more.prepended(token))
   private def expected(tokens: Seq[Token]): Nothing =
     val expectedTokens = tokens.mkString(" or ")
-    throw new UnexpectedTokenException(s"Expected: $expectedTokens, found: $curToken")
+    throw new UnexpectedTokenException(
+      s"Expected: $expectedTokens, found: $curToken"
+    )
+
+  private def parseCommand() = {
+
+  }
 
   /** the root method of the parser: parses an entry phrase */
   // TODO - Part 2 Step 4
-  def parsePhrases() : ExprTree =
+  def parsePhrases(): ExprTree =
+
+    // BONJOUR (optional)
     if curToken == BONJOUR then readToken()
-    if curToken == JE then
+
+    // QUEL EST LE PRIX DE
+    if curToken == QUEL then
       readToken()
-      eat(ETRE)
-      if curToken == ASSOIFFE then
-        readToken()
-        Thirsty
-      else if curToken == AFFAME then
-        readToken()
-        Hungry
-      else if curToken == PSEUDO then
-        val pseudo = eat(PSEUDO)
-        Auth(pseudo)
-      else if curToken == VOULOIR then
-        readToken()
-        if curToken == CONNAITRE then
-          readToken()
-          eat(MON)
-          readToken()
-          if curToken == SOLDE then
-            Solde
-        
-        expected(SOLDE)
-      else expected(ASSOIFFE, AFFAME)
-    
-    else if curToken == QUEL then 
-      // readToken()
       eat(ETRE)
       eat(LE)
       eat(PRIX)
       eat(DE)
-      // Command
-      Price
-    
+      // TODO: Command
+      Solde
     else if curToken == COMBIEN then
+      readToken()
+      eat(COUTER)
+      // TODO: Command
+      Solde
+
+    // JE
+    else if curToken == JE then
+      readToken()
+      // VOULOIR [COMMANDER | CONNAITRE MON SOLDE]
+      if curToken == VOULOIR then
         readToken()
-        eat(COUTER)
-        Price
+        if curToken == COMMANDER then
+          // todo: command
+          Solde
+        else if curToken == CONNAITRE then
+          readToken()
+          eat(MON)
+          eat(SOLDE)
+          Solde
+        else expected(COMMANDER, CONNAITRE)
 
+      // ETRE [ASSOIFFE | AFFAME | PSEUDO]
+      else if curToken == ETRE then
+        readToken()
+        if curToken == ASSOIFFE then Thirsty
+        else if curToken == AFFAME then Hungry
+        else if curToken == PSEUDO then
+          val pseudo = eat(PSEUDO)
+          Auth(pseudo)
+        else expected(ASSOIFFE, AFFAME, PSEUDO)
 
-    else expected(BONJOUR, JE)
+      // ME APPELLER PSEUDO
+      else if curToken == ME then
+        eat(APPELLER)
+        val pseudo = eat(PSEUDO)
+        Auth(pseudo)
+      else expected(QUEL, COMBIEN, JE)
+    else expected(VOULOIR, ETRE, JE)

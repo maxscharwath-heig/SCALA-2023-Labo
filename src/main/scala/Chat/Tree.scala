@@ -1,18 +1,26 @@
 package Chat
 
-/**
-  * This sealed trait represents a node of the tree.
+/** This sealed trait represents a node of the tree.
   */
 sealed trait ExprTree
 
-/**
-  * Declarations of the nodes' types.
+/** Declarations of the nodes' types.
   */
 object ExprTree:
-  // TODO - Part 2 Step 3
-  // Example cases
+  // Etats
   case object Thirsty extends ExprTree
   case object Hungry extends ExprTree
+
+  // Actions
   case class Auth(username: String) extends ExprTree
   case object Solde extends ExprTree
-  case object Price extends ExprTree // Ask for the price of a product
+  case object Price extends ExprTree
+  case class Command(products: ExprTree) extends ExprTree
+
+  // Products
+  case class Product(name: String, brand: String, quantity: Int)
+      extends ExprTree
+
+  // Operators
+  case class Or(left: ExprTree, right: ExprTree) extends ExprTree
+  case class And(left: ExprTree, right: ExprTree) extends ExprTree
