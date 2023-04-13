@@ -14,15 +14,11 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
     * @return
     *   the result of the computation
     */
-  // TODO - Part 2 Step 3
   def computePrice(t: ExprTree): Double = {
     t match
       case Product(name, brand, quantity) => {
-        // If brand is not specified, use default brand
-        val b = if (brand == "") productSvc.getDefaultBrand(name) else brand
-        quantity * productSvc.getPrice(name, b)
+        quantity * productSvc.getPrice(name, brand)
       }
-        
       case Command(products) => computePrice(products)
       case Or(left, right)  => Math.min(computePrice(left), computePrice(right))
       case And(left, right) => computePrice(left) + computePrice(right)
@@ -38,16 +34,21 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
     // you can use this to avoid having to pass the session when doing recursion
     val inner: ExprTree => String = reply(session)
     t match
-      // TODO - Part 2 Step 3
       case Thirsty =>
         "Eh bien, la chance est de votre côté, car nous offrons les meilleures bières de la région !"
 
       case Hungry =>
         "Pas de soucis, nous pouvons notamment vous offrir des croissants faits maisons !"
 
-      case Price(_) => s"Cela coûte CHF ${computePrice(t)}"
+      case Price(expr) => s"Cela coûte CHF ${computePrice(expr)}"
 
-      case Product(name, brand, quantity) => s"$quantity $name $brand"
+      case Product(name, brand, quantity) => {
+        // TODO: Check is there is a way to set the brand before
+        if (brand.isEmpty())
+          s"$quantity $name ${productSvc.getDefaultBrand(name)}"
+        else
+          s"$quantity $name $brand"
+      }
 
       case Auth(name) => {
         // If user does not exist, create it and add default solde
@@ -74,11 +75,14 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
               "Vous n'avez pas assez d'argent pour effectuer cette commande."
             else {
               accountSvc.purchase(user, finalPrice)
-              s"Voici donc ${inner(products)} ! Cela coûte $finalPrice et votre nouveau solde est de ${accountSvc.getAccountBalance(user)}"
+              s"Voici donc ${inner(products)} ! Cela coûte $finalPrice et votre nouveau solde est de ${accountSvc
+                  .getAccountBalance(user)}"
             }
           }
           case None => "Veuillez d'abord vous identifier."
       }
 
-      case _ => "Je ne comprends pas votre demande."
+      case And(left, right) => s"${inner(left)} et ${inner(right)} !"
+
+      case Or(left, right) => s"${inner(left)} et ${inner(right)} !" // TODO
 end AnalyzerService

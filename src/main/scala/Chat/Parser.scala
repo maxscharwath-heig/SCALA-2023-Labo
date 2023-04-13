@@ -61,12 +61,14 @@ class Parser(tokenized: Tokenized):
       readToken()
     end if
 
-    println(s"$name, $brand, $quantity")
     Product(name, brand, quantity)
   }
 
   private def parseCommand(): ExprTree = {
     val product = parseProduct()
+
+    // TODO: handle operators
+
     product
   }
 
@@ -89,6 +91,8 @@ class Parser(tokenized: Tokenized):
       eat(PRIX)
       eat(DE)
       Price(parseCommand())
+
+    // COMBIEN COUTE
     else if curToken == COMBIEN then
       readToken()
       eat(COUTER)
