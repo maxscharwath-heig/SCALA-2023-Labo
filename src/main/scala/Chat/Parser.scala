@@ -64,22 +64,25 @@ class Parser(tokenized: Tokenized):
     Product(name, brand, quantity)
   }
 
-  private def parseCommand(): ExprTree = {
-    val product = parseProduct()
-
-    // TODO: handle operators
-
-    product
-  }
+  private def parseCommand(): ExprTree = leftAssocOp(parseProduct())
 
   private def parsePseudonym(): ExprTree = {
     val pseudo = eat(PSEUDO)
     Auth(pseudo.substring(1)) // Remove the '_' before the pseudo
   }
 
+  private def leftAssocOp(expr: ExprTree): ExprTree = {
+    if curToken == ET then
+      readToken()
+      leftAssocOp(And(expr, parseCommand()))
+    else if curToken == OU then
+      readToken()
+      leftAssocOp(Or(expr, parseCommand()))
+    else expr
+  }
+
   /** the root method of the parser: parses an entry phrase */
-  // TODO - Part 2 Step 4
-  def parsePhrases(): ExprTree =
+  def parsePhrases(): ExprTree = {
     // BONJOUR (optional)
     if curToken == BONJOUR then readToken()
 
@@ -133,3 +136,4 @@ class Parser(tokenized: Tokenized):
         Auth(pseudo)
       else expected(QUEL, COMBIEN, JE)
     else expected(VOULOIR, ETRE, JE)
+  }

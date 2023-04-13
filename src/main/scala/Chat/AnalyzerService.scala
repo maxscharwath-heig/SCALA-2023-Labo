@@ -82,7 +82,12 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
           case None => "Veuillez d'abord vous identifier."
       }
 
-      case And(left, right) => s"${inner(left)} et ${inner(right)} !"
+      case And(left, right) => s"${inner(left)} et ${inner(right)}"
 
-      case Or(left, right) => s"${inner(left)} et ${inner(right)} !" // TODO
+      case Or(left, right) =>
+        if (computePrice(left) < computePrice(right))
+          inner(left)
+        else
+          inner(right)
+
 end AnalyzerService
