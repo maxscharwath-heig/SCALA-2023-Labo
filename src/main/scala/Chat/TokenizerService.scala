@@ -20,6 +20,7 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
     val sanitizedTokens = input
       .replaceAll("[.,!?*']+", " ")
       .trim
+      .toLowerCase
       .split("\\s+")
 
     // For every word, get the closest word in the dict and the corresponding token

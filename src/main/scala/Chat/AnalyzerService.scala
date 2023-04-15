@@ -21,7 +21,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
       accountSvc.addAccount(name, DEFAULT_SOLDE)
 
     session.setCurrentUser(name)
-    s"Bonjour $name !"
+    s"Bonjour, $name !"
   }
 
   // Helper method to process a command
@@ -34,7 +34,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
           "Vous n'avez pas assez d'argent pour effectuer cette commande."
         else {
           accountSvc.purchase(user, finalPrice)
-          s"Voici donc ${inner(products)} ! Cela coûte $finalPrice et votre nouveau solde est de ${accountSvc.getAccountBalance(user)}"
+          s"Voici donc ${inner(products)} ! Cela coûte CHF $finalPrice et votre nouveau solde est de CHF ${accountSvc.getAccountBalance(user)}."
         }
       }
       case None => "Veuillez d'abord vous identifier."
@@ -44,7 +44,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
   private def getAccountBalance(session: Session): String =
     session.getCurrentUser match {
       case Some(user) =>
-        s"Le montant actuel de votre solde est de CHF ${accountSvc.getAccountBalance(user)}"
+        s"Le montant actuel de votre solde est de CHF ${accountSvc.getAccountBalance(user)}."
       case None => "Veuillez d'abord vous identifier."
     }
 
@@ -69,9 +69,9 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
   def reply(session: Session)(t: ExprTree): String = {
     val inner: ExprTree => String = reply(session)
     t match {
-      case Thirsty => "Eh bien, la chance est de votre côté, car nous offrons les meilleures bières de la région !"
-      case Hungry  => "Pas de soucis, nous pouvons notamment vous offrir des croissants faits maisons !"
-      case Price(expr) => s"Cela coûte CHF ${computePrice(expr)}"
+      case Thirsty => "Eh bien, la chance est de votre côté car nous offrons les meilleures bières de la région !"
+      case Hungry  => "Pas de soucis ! Nous pouvons vous offrir des croissants faits maisons !"
+      case Price(expr) => s"Cela coûte CHF ${computePrice(expr)}."
       case Product(name, brand, quantity) =>
         s"$quantity $name ${if (brand.isEmpty()) productSvc.getDefaultBrand(name) else brand}"
       case Auth(name) => handleAuth(session, name)
