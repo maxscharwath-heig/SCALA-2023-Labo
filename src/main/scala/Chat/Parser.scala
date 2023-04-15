@@ -35,6 +35,7 @@ class Parser(tokenized: Tokenized):
     */
   private def expected(token: Token, more: Token*): Nothing =
     expected(more.prepended(token))
+    
   private def expected(tokens: Seq[Token]): Nothing =
     val expectedTokens = tokens.mkString(" or ")
     throw new UnexpectedTokenException(
@@ -57,10 +58,10 @@ class Parser(tokenized: Tokenized):
   private def leftAssocOp(expr: ExprTree): ExprTree = curToken match
     case ET =>
       readToken()
-      leftAssocOp(And(expr, parseCommand()))
+      leftAssocOp(And(expr, parseProduct()))
     case OU =>
       readToken()
-      leftAssocOp(Or(expr, parseCommand()))
+      leftAssocOp(Or(expr, parseProduct()))
     case _ => expr
 
   // Helper to parse with the given tokens and then parse with the given parser
