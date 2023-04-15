@@ -1,3 +1,6 @@
+// SCALA - Labo 2
+// Nicolas Crausaz & Maxime Scharwath
+
 package Chat
 
 import scala.quoted.Expr
@@ -39,9 +42,8 @@ class Parser(tokenized: Tokenized):
     )
 
   private def parseProduct(): ExprTree = {
-    // set default values for quantity and brand
-    val quantity = if curToken == NUM then eat(NUM).toInt else 1
-    val name = if curToken == PRODUIT then eat(PRODUIT) else ""
+    val quantity = if curToken == NUM then eat(NUM).toInt else expected(NUM)
+    val name = if curToken == PRODUIT then eat(PRODUIT) else expected(PRODUIT)
     val brand = if curToken == MARQUE then eat(MARQUE) else ""
 
     Product(name, brand, quantity)

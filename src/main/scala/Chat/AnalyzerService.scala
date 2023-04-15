@@ -1,3 +1,6 @@
+// SCALA - Labo 2
+// Nicolas Crausaz & Maxime Scharwath
+
 package Chat
 
 import Data.{AccountService, ProductService, Session}

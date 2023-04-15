@@ -1,3 +1,6 @@
+// SCALA - Labo 2
+// Nicolas Crausaz & Maxime Scharwath
+
 package Chat
 
 /** This sealed trait represents a node of the tree.

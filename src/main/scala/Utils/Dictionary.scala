@@ -1,3 +1,6 @@
+// SCALA - Labo 2
+// Nicolas Crausaz & Maxime Scharwath
+
 package Utils
 
 /** Contains the dictionary of the application, which is used to validate,
@@ -66,7 +69,6 @@ object Dictionary:
     "wittekop" -> "wittekop",
     "punkipa" -> "punkipa",
     "jackhammer" -> "jackhammer",
-    "ténébreuse" -> "tenebreuse",
-    // TODO - Part 2 Step 1
+    "ténébreuse" -> "tenebreuse"
   )
 end Dictionary

@@ -1,4 +1,4 @@
-// SCALA - Labo 1
+// SCALA - Labo 2
 // Nicolas Crausaz & Maxime Scharwath
 
 package Chat
@@ -77,8 +77,4 @@ class TokenizerService(spellCheckerSvc: SpellCheckerService):
       case _                                    => Token.UNKNOWN
     }
   }
-
-  // TODO - Part 1 Step 3
-  // TODO - Part 2 Step 1
-  // def tokenize(input: String): Tokenized = ???
 end TokenizerService
