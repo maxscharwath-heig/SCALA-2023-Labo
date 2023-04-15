@@ -39,101 +39,79 @@ class Parser(tokenized: Tokenized):
     )
 
   private def parseProduct(): ExprTree = {
-    // TODO: add the defaults values
-    var name = ""
-    var quantity = 1
-    var brand = ""
-
-    if curToken == NUM then
-      quantity = Integer.parseInt(curValue)
-      readToken()
-    else expected(NUM)
-
-    // Getting product type
-    if curToken == PRODUIT then
-      name = curValue
-      readToken()
-    else expected(PRODUIT)
-
-    // Getting product brand (optional)
-    if curToken == MARQUE then
-      brand = curValue
-      readToken()
-    end if
+    // set default values for quantity and brand
+    val quantity = if curToken == NUM then eat(NUM).toInt else 1
+    val name = if curToken == PRODUIT then eat(PRODUIT) else ""
+    val brand = if curToken == MARQUE then eat(MARQUE) else ""
 
     Product(name, brand, quantity)
   }
 
   private def parseCommand(): ExprTree = leftAssocOp(parseProduct())
 
-  private def parsePseudonym(): ExprTree = {
-    val pseudo = eat(PSEUDO)
-    Auth(pseudo.substring(1)) // Remove the '_' before the pseudo
-  }
+  // Parse Pseudonym and remove the leading "_"
+  private def parsePseudonym(): ExprTree = Auth(eat(PSEUDO).substring(1)) 
 
-  private def leftAssocOp(expr: ExprTree): ExprTree = {
-    if curToken == ET then
+  private def leftAssocOp(expr: ExprTree): ExprTree = curToken match
+    case ET =>
       readToken()
       leftAssocOp(And(expr, parseCommand()))
-    else if curToken == OU then
+    case OU =>
       readToken()
       leftAssocOp(Or(expr, parseCommand()))
-    else expr
+    case _ => expr
+
+  // Helper to parse with the given tokens and then parse with the given parser
+  private def parseWith(tokens: Token*)(parser: => ExprTree): ExprTree = {
+    tokens.foreach(eat)
+    parser
   }
 
-  /** the root method of the parser: parses an entry phrase */
+  // the root method of the parser: parses an entry phrase
   def parsePhrases(): ExprTree = {
-    // BONJOUR (optional)
-    if curToken == BONJOUR then readToken()
+    if curToken == BONJOUR then readToken() // Optional BONJOUR
 
-    // QUEL EST LE PRIX DE
-    if curToken == QUEL then
-      readToken()
-      eat(ETRE)
-      eat(LE)
-      eat(PRIX)
-      eat(DE)
-      Price(parseCommand())
-
-    // COMBIEN COUTE
-    else if curToken == COMBIEN then
-      readToken()
-      eat(COUTER)
-      Price(parseCommand())
-
-    // JE
-    else if curToken == JE then
-      readToken()
-      // VOULOIR [COMMANDER | CONNAITRE MON SOLDE]
-      if curToken == VOULOIR then
+    curToken match
+      case QUEL =>
         readToken()
-        if curToken == COMMANDER then
-          readToken()
-          Command(parseCommand())
-        else if curToken == CONNAITRE then
-          readToken()
-          eat(MON)
-          eat(SOLDE)
-          Solde
-        else expected(COMMANDER, CONNAITRE)
-
-      // ETRE [ASSOIFFE | AFFAME | PSEUDO]
-      else if curToken == ETRE then
+        parseWith(ETRE, LE, PRIX, DE)(Price(parseCommand()))
+      case COMBIEN =>
         readToken()
-        if curToken == ASSOIFFE then
-          readToken()
-          Thirsty
-        else if curToken == AFFAME then
-          readToken()
-          Hungry
-        else if curToken == PSEUDO then parsePseudonym()
-        else expected(ASSOIFFE, AFFAME, PSEUDO)
-
-      // ME APPELLER PSEUDO
-      else if curToken == ME then
-        eat(APPELLER)
-        val pseudo = eat(PSEUDO)
-        Auth(pseudo)
-      else expected(QUEL, COMBIEN, JE)
-    else expected(VOULOIR, ETRE, JE)
+        parseWith(COUTER)(Price(parseCommand()))
+      case JE =>
+        readToken()
+        curToken match
+          case VOULOIR => parseWith(VOULOIR)(parseWantPhrase())
+          case ETRE => parseWith(ETRE)(parseBePhrase())
+          case ME => parseWith(ME, APPELLER)(parseMePhrase())
+          case _ => expected(VOULOIR, ETRE, ME)
+      case _ => expected(QUEL, COMBIEN, JE)
   }
+
+  // VOULOIR [COMMANDER | CONNAITRE MON SOLDE]
+  private def parseWantPhrase(): ExprTree = curToken match
+    case COMMANDER =>
+      readToken()
+      Command(parseCommand())
+    case CONNAITRE =>
+      parseWith(CONNAITRE, MON, SOLDE)(Solde)
+    case _ => expected(COMMANDER, CONNAITRE)
+
+  // ETRE [ASSOIFFE | AFFAME | PSEUDO]
+  private def parseBePhrase(): ExprTree = curToken match
+    case ASSOIFFE =>
+      readToken()
+      Thirsty
+    case AFFAME =>
+      readToken()
+      Hungry
+    case PSEUDO => parsePseudonym()
+    case _ => expected(ASSOIFFE, AFFAME, PSEUDO)
+  
+  // ME APPELLER PSEUDO
+  private def parseMePhrase(): ExprTree = {
+    val pseudo = eat(PSEUDO)
+    Auth(pseudo)
+  }
+
+end Parser
