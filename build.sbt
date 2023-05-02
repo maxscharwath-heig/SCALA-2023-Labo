@@ -5,6 +5,7 @@ lazy val root = project
   .settings(
     name := "Bot-tender",
     version := "0.2.1",
+    fork := true,
     scalaVersion := scala3Version,
     libraryDependencies ++= List(
         "org.scalactic" %% "scalactic" % "3.2.15",
