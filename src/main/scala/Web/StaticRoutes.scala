@@ -8,7 +8,7 @@ class StaticRoutes()(implicit val log: cask.Logger) extends cask.Routes:
   @cask.staticResources("/static/js")
   def staticResourceRoutesJS() = "./js"
 
-  // Serve the resources in the `./static/js` directory
+  // Serve the resources in the `./static/css` directory
   @cask.staticResources("/static/css")
   def staticResourceRoutesCSS() = "./css"
 
