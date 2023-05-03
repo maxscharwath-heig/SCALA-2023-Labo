@@ -25,56 +25,12 @@ class MessagesRoutes(
     sessionSvc
   ) // This decorator fills the `(session: Session)` part of the `index` method.
   @cask.get("/")
-  def index()(session: Session) =
-    html(
-      head(
-        script(src := "static/js/main.js"),
-        link(rel := "stylesheet", href := "static/css/main.css")
-      ),
-      body()(
-        tag("nav")(
-          a(href := "/", `class` := "nav-brand")("Brand"),
-          // div(`class` := "nav-item")(
-          //   a(href := "/login")("Login")
-          // ),
-          session.getCurrentUser
-            .map(u => a(href := "/logout")("Logout"))
-            .getOrElse(a(href := "/login")("Login"))
-        ),
-        div(`class` := "content")(
-          div(id := "boardMessage")(
-            // TODO: loop on messages
-            div(`class` := "msg")(
-              span(`class` := "author")("Author"),
-              span(`class` := "msg-content")(
-                span(`class` := "mention")("Mension"),
-                "Content"
-              )
-            ),
-            "Please wait, the messages are loading !"
-          ),
-          form(
-            id := "msgForm",
-            onsubmit := "submitMessageForm();return false"
-          )(
-            div(id := "errorDiv", `class` := "errorMsg"),
-            label(`for` := "messageInput")("Your message:"),
-            input(
-              `type` := "text",
-              id := "messageInput",
-              name := "msg",
-              placeholder := "Write your message"
-            ),
-            input(`type` := "submit", value := "Envoyer")
-          )
-        )
-      )
-    )
+  def index()(session: Session) = Layouts.index(session)
 
-    // TODO - Part 3 Step 2: Display the home page (with the message board and the form to send new messages)
-    // session.getCurrentUser
-    //   .map(u => s"You are logged in as ${u} !")
-    //   .getOrElse("You are not logged in !")
+  // TODO - Part 3 Step 2: Display the home page (with the message board and the form to send new messages)
+  // session.getCurrentUser
+  //   .map(u => s"You are logged in as ${u} !")
+  //   .getOrElse("You are not logged in !")
 
   // TODO - Part 3 Step 4b: Process the new messages sent as JSON object to `/send`. The JSON looks
   //      like this: `{ "msg" : "The content of the message" }`.
