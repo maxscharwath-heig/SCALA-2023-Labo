@@ -43,7 +43,7 @@ object Layouts:
     id := "msgForm",
     onsubmit := "submitMessageForm(); return false"
   )(
-    div(id := "errorDiv", cls := "errorMsg"),
+    div(id := "errorDiv", cls := "errorMsg")(),
     label(`for` := "messageInput")("Your message:"),
     input(
       `type` := "text",
