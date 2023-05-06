@@ -22,6 +22,9 @@ object Layouts:
   private def navbar(username: Option[String]) = tag("nav")(
     a(href := "/", cls := "nav-brand")("Bot-tender"),
     username
+      .map(u => s"You are logged in as ${u}")
+      .getOrElse("You are not logged in"),
+    username
       .map(u => navLink("/logout", "Logout"))
       .getOrElse(navLink("/login", "Login"))
   )
@@ -128,7 +131,11 @@ object Layouts:
   def login(session: Session) = html(
     htmlHead(),
     body(
-      navbar(session.getCurrentUser),
+      // TODO: remove duplication with navbar
+      tag("nav")(
+        a(href := "/", cls := "nav-brand")("Bot-tender"),
+        navLink("/", "Go to the message board")
+      ),
       div(cls := "content")(
         h1("Login"),
         loginForm(),
