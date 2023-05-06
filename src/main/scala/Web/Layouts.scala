@@ -53,6 +53,36 @@ object Layouts:
     input(`type` := "submit", value := "Envoyer")
   )
 
+  /** Render the login form.
+    */
+  private def loginForm() =
+    form(id := "loginForm", method := "POST", action := "/login")(
+      div(id := "errorLoginDiv", cls := "errorMsg")(),
+      label(`for` := "usernameLoginInput")("Username:"),
+      input(
+        `type` := "text",
+        id := "usernameLoginInput",
+        name := "username",
+        placeholder := "Enter your username"
+      ),
+      input(`type` := "submit", value := "Envoyer")
+    )
+
+    /** Render the register form.
+      */
+  private def registerForm() =
+    form(id := "registerForm", method := "POST", action := "/register")(
+      div(id := "errorRegisterDiv", cls := "errorMsg")(),
+      label(`for` := "usernameRegisterInput")("Username:"),
+      input(
+        `type` := "text",
+        id := "usernameRegisterInput",
+        name := "username",
+        placeholder := "Enter your username"
+      ),
+      input(`type` := "submit", value := "Envoyer")
+    )
+
   /** Render a list of messages.
     *
     * Notice: Using Any for now, but we will use a proper type later, as there
@@ -89,6 +119,33 @@ object Layouts:
       div(cls := "content")(
         messageList(Nil), // For now, we don't display any message
         messageForm()
+      )
+    )
+  )
+
+  /** Renders the login page.
+    */
+  def login(session: Session) = html(
+    htmlHead(),
+    body(
+      navbar(session.getCurrentUser),
+      div(cls := "content")(
+        h1("Login"),
+        loginForm(),
+        h1("Register"),
+        registerForm()
+      )
+    )
+  )
+
+  /** Renders the success page.
+    */
+  def success(message: String) = html(
+    htmlHead(),
+    body(
+      div(cls := "content")(
+        h1(s"Success: ${message}"),
+        a(href := "/")("Back to home")
       )
     )
   )

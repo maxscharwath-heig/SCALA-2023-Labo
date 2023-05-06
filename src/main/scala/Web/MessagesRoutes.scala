@@ -2,7 +2,6 @@ package Web
 
 import Chat.{AnalyzerService, TokenizerService}
 import Data.{MessageService, AccountService, SessionService, Session}
-import scalatags.Text.all._
 
 /** Assembles the routes dealing with the message board:
   *   - One route to display the home page
