@@ -58,9 +58,9 @@ object Layouts:
 
   /** Render the login form.
     */
-  private def loginForm() =
+  private def loginForm(error: Option[String]) =
     form(id := "loginForm", method := "POST", action := "/login")(
-      div(id := "errorLoginDiv", cls := "errorMsg")(),
+      div(id := "errorLoginDiv", cls := "errorMsg")(error.getOrElse("")),
       label(`for` := "usernameLoginInput")("Username:"),
       input(
         `type` := "text",
@@ -73,9 +73,9 @@ object Layouts:
 
     /** Render the register form.
       */
-  private def registerForm() =
+  private def registerForm(error: Option[String]) =
     form(id := "registerForm", method := "POST", action := "/register")(
-      div(id := "errorRegisterDiv", cls := "errorMsg")(),
+      div(id := "errorRegisterDiv", cls := "errorMsg")(error.getOrElse("")),
       label(`for` := "usernameRegisterInput")("Username:"),
       input(
         `type` := "text",
@@ -128,7 +128,9 @@ object Layouts:
 
   /** Renders the login page.
     */
-  def login(session: Session) = html(
+  def login(loginError: Option[String], registerError: Option[String])(
+      session: Session
+  ) = html(
     htmlHead(),
     body(
       // TODO: remove duplication with navbar
@@ -138,9 +140,9 @@ object Layouts:
       ),
       div(cls := "content")(
         h1("Login"),
-        loginForm(),
+        loginForm(loginError),
         h1("Register"),
-        registerForm()
+        registerForm(registerError)
       )
     )
   )

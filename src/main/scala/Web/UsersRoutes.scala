@@ -19,33 +19,29 @@ class UsersRoutes(accountSvc: AccountService, sessionSvc: SessionService)(
 
   @getSession(sessionSvc)
   @cask.get("/login")
-  def index()(session: Session) = Layouts.login(session)
+  def index()(session: Session) = Layouts.login(None, None)(session)
 
   @getSession(sessionSvc)
   @cask.postForm("/login")
   def login(username: cask.FormValue)(session: Session) = {
     if (!accountSvc.isAccountExisting(username.value)) {
-      // TODO Error
-      println("Error")
+      Layouts.login(Some("The specified user does not exists"), None)(session)
+    } else {
+      session.setCurrentUser(username.value)
+      Layouts.success("You have been logged in successfully")
     }
-
-    session.setCurrentUser(username.value)
-
-    Layouts.success("You have been logged in successfully")
   }
 
   @getSession(sessionSvc)
   @cask.postForm("/register")
   def register(username: cask.FormValue)(session: Session) = {
     if (accountSvc.isAccountExisting(username.value)) {
-      // TODO Error
-      println("Error")
+      Layouts.login(None, Some("The specified user already exists"))(session)
+    } else {
+      accountSvc.addAccount(username.value, 30.0)
+      session.setCurrentUser(username.value)
+      Layouts.success("You have been registered successfully")
     }
-    accountSvc.addAccount(username.value, 30.0)
-
-    session.setCurrentUser(username.value)
-
-    Layouts.success("You have been registered successfully")
   }
 
   @getSession(sessionSvc)
