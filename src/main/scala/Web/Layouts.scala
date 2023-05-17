@@ -86,31 +86,20 @@ object Layouts:
       input(`type` := "submit", value := "Envoyer")
     )
 
-  /** Render a list of messages.
-    *
-    * Notice: Using Any for now, but we will use a proper type later, as there
-    * is no need to display message for this part of lab.
-    */
-  private def messageList(messages: List[Any]) = div(id := "boardMessage")(
-    if messages.isEmpty then
-      placeholderContent("Please wait, the messages are loading !")
-    else messages.map(_ => message("author", "content", "mention"))
-  )
-
   /** Render a chat message.
     */
-  private def message(author: String, content: String, mention: String) =
+  def message(author: String, content: Frag): Frag =
     div(cls := "msg")(
-      span(cls := "author")(author),
-      span(cls := "msg-content")(
-        span(cls := "mention")(mention),
-        content
-      )
+      tag("span")(cls := "author")(author),
+      content
     )
+
+  def messageContent(message: String): Frag =
+    tag("span")(cls := "msg-content")(message)
 
   /** Render a placeholder message.
     */
-  private def placeholderContent(placeholder: String) =
+  def placeholderContent(placeholder: String) =
     p(textAlign.center)(placeholder)
 
   /** Renders the index page.
@@ -120,7 +109,7 @@ object Layouts:
     body(
       navbar(session.getCurrentUser),
       div(cls := "content")(
-        messageList(Nil), // For now, we don't display any message
+        div(id := "boardMessage")(),
         messageForm()
       )
     )
