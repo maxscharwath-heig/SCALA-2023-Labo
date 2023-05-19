@@ -94,8 +94,11 @@ object Layouts:
       content
     )
 
-  def messageContent(message: String): Frag =
-    tag("span")(cls := "msg-content")(message)
+  def messageContent(message: String, mention: Option[String]): Frag =
+    tag("span")(cls := "msg-content")(
+      span(cls := "mention")(mention),
+      message
+    )
 
   /** Render a placeholder message.
     */

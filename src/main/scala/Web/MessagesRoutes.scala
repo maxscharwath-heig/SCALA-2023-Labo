@@ -6,6 +6,8 @@ import scala.collection.mutable.ListBuffer
 import castor.Context.Simple.global
 import cask.endpoints.WsChannelActor
 import Chat.Parser
+import Chat.ExprTree.Auth
+import scala.quoted.ToExpr.NoneToExpr
 
 /** Assembles the routes dealing with the message board:
   *   - One route to display the home page
@@ -42,12 +44,12 @@ class MessagesRoutes(
       ujson.Obj("success" -> false, "err" -> "A message cannot be empty")
     } else {
 
-      processMessage(msg)(session)
+      val jsonResponse = processMessage(msg)(session)
 
       val latests = latestMessagesAsString(20)
       subscribers.foreach(_.send(cask.Ws.Text(latests)))
 
-      ujson.Obj("success" -> true, "err" -> "")
+      jsonResponse
     }
   }
 
@@ -87,33 +89,70 @@ class MessagesRoutes(
     // Parse the mention of me the message
     val (mentionnedUser, content) = parseMessageMention(msg)
 
-    // Check if the message has a bot mention
-    if mentionnedUser == Some("bot") then
-      // Get the bot reply
-      val tokens = tokenizerSvc.tokenize(content)
+    mentionnedUser match {
+      case Some("@bot") => {
+        // Get the bot reply
+        val tokens = tokenizerSvc.tokenize(content)
 
-      val expr = new Parser(tokens).parsePhrases()
+        try {
+          val expr = new Parser(tokens).parsePhrases()
+          // Add the message of user
+          val userMsgId = msgSvc.add(
+            session.getCurrentUser.get,
+            Layouts.messageContent(content, mentionnedUser),
+            mentionnedUser,
+            Some(expr)
+          )
 
-      // Add the message of user
-      val userMsgId = msgSvc.add(
-        session.getCurrentUser.get,
-        Layouts.messageContent(msg),
-        mentionnedUser,
-        Some(expr)
-      )
+          // Identification message must not be analyzed to prevent changes of session user
+          expr match {
+            case Auth(username) => {
+              msgSvc.add(
+                "bot",
+                Layouts.messageContent("Hello " + username, None),
+                session.getCurrentUser,
+                None,
+                Some(userMsgId)
+              )
+              ujson.Obj("success" -> true, "err" -> "")
+            }
 
-      // Get the reply of the bot
-      val reply = analyzerSvc.reply(session)(expr)
+            case _ => {
+              // Get the reply of the bot
+              val reply = analyzerSvc.reply(session)(expr)
+              msgSvc.add(
+                "bot",
+                Layouts.messageContent(reply, None),
+                session.getCurrentUser,
+                None,
+                Some(userMsgId)
+              )
+              ujson.Obj("success" -> true, "err" -> "")
+            }
+          }
 
-      // Add the message of bot with reply
-      msgSvc.add(
-        "bot",
-        Layouts.messageContent(reply),
-        session.getCurrentUser,
-        None,
-        Some(userMsgId)
-      )
-    else msgSvc.add(session.getCurrentUser.get, Layouts.messageContent(msg))
+        } catch {
+          case e: Exception =>
+            ujson.Obj("success" -> false, "err" -> e.getMessage())
+        }
+      }
+
+      case Some(anyUser) => {
+        msgSvc.add(
+          session.getCurrentUser.get,
+          Layouts.messageContent(content, Some(anyUser))
+        )
+        ujson.Obj("success" -> true, "err" -> "")
+      }
+
+      case None => {
+        msgSvc.add(
+          session.getCurrentUser.get,
+          Layouts.messageContent(content, None)
+        )
+        ujson.Obj("success" -> true, "err" -> "")
+      }
+    }
   }
 
   /** Split the mention of a user in a message and the content of the message
@@ -126,16 +165,10 @@ class MessagesRoutes(
     msg(0) match {
       case '@' =>
         val (mentionnedUser, content) = msg.splitAt(msg.indexOf(' '))
-        (Some(mentionnedUser.tail), content.tail)
+        (Some(mentionnedUser), content)
       case _ => (None, msg)
     }
   }
-
-  // TODO - Part 3 Step 5: Modify the code of step 4b to process the messages sent to the bot (message
-  //      starts with `@bot `). This message and its reply from the bot will be added to the message
-  //      store together.
-  //
-  //      The exceptions raised by the `Parser` will be treated as an error (same as in step 4b)
 
   initialize()
 end MessagesRoutes
