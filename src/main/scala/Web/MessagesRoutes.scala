@@ -4,6 +4,8 @@ import Chat.{AnalyzerService, TokenizerService}
 import Data.{MessageService, AccountService, SessionService, Session}
 import scala.collection.mutable.ListBuffer
 import castor.Context.Simple.global
+import cask.endpoints.WsChannelActor
+import Chat.Parser
 
 /** Assembles the routes dealing with the message board:
   *   - One route to display the home page
@@ -22,7 +24,7 @@ class MessagesRoutes(
     extends cask.Routes:
   import Decorators.getSession
 
-  val subscribers = ListBuffer[cask.endpoints.WsChannelActor]()
+  val subscribers = ListBuffer[WsChannelActor]()
 
   @getSession(sessionSvc)
   @cask.get("/")
@@ -40,7 +42,7 @@ class MessagesRoutes(
       ujson.Obj("success" -> false, "err" -> "A message cannot be empty")
     } else {
 
-      msgSvc.add(session.getCurrentUser.get, Layouts.messageContent(msg))
+      processMessage(msg)(session)
 
       val latests = latestMessagesAsString(20)
       subscribers.foreach(_.send(cask.Ws.Text(latests)))
@@ -78,6 +80,54 @@ class MessagesRoutes(
         messages.reverse
           .map((user, msg) => Layouts.message(user, msg).toString)
           .mkString
+    }
+  }
+
+  private def processMessage(msg: String)(session: Session) = {
+    // Parse the mention of me the message
+    val (mentionnedUser, content) = parseMessageMention(msg)
+
+    // Check if the message has a bot mention
+    if mentionnedUser == Some("bot") then
+      // Get the bot reply
+      val tokens = tokenizerSvc.tokenize(content)
+
+      val expr = new Parser(tokens).parsePhrases()
+
+      // Add the message of user
+      val userMsgId = msgSvc.add(
+        session.getCurrentUser.get,
+        Layouts.messageContent(msg),
+        mentionnedUser,
+        Some(expr)
+      )
+
+      // Get the reply of the bot
+      val reply = analyzerSvc.reply(session)(expr)
+
+      // Add the message of bot with reply
+      msgSvc.add(
+        "bot",
+        Layouts.messageContent(reply),
+        session.getCurrentUser,
+        None,
+        Some(userMsgId)
+      )
+    else msgSvc.add(session.getCurrentUser.get, Layouts.messageContent(msg))
+  }
+
+  /** Split the mention of a user in a message and the content of the message
+    * @param msg
+    *   the message
+    * @return
+    *   a tuple with the mentionned user (if any) and the content of the message
+    */
+  private def parseMessageMention(msg: String): (Option[String], String) = {
+    msg(0) match {
+      case '@' =>
+        val (mentionnedUser, content) = msg.splitAt(msg.indexOf(' '))
+        (Some(mentionnedUser.tail), content.tail)
+      case _ => (None, msg)
     }
   }
 
