@@ -34,23 +34,24 @@ class MessagesRoutes(
 
   @getSession(sessionSvc)
   @cask.postJson("/send")
-  def postMessage(msg: String)(session: Session) = {
+  def postMessage(msg: String)(session: Session): ujson.Obj = {
     if (session.getCurrentUser.isEmpty) {
-      ujson.Obj(
+      return ujson.Obj(
         "success" -> false,
         "err" -> "You must be logged in to send messages"
       )
-    } else if (msg.isEmpty) {
-      ujson.Obj("success" -> false, "err" -> "A message cannot be empty")
-    } else {
-
-      val jsonResponse = processMessage(msg)(session)
-
-      val latests = latestMessagesAsString(20)
-      subscribers.foreach(_.send(cask.Ws.Text(latests)))
-
-      jsonResponse
     }
+
+    if (msg.isEmpty) {
+      return ujson.Obj("success" -> false, "err" -> "A message cannot be empty")
+    }
+
+    val jsonResponse = processMessage(msg)(session)
+
+    val latests = latestMessagesAsCaskWSString(20)
+    subscribers.foreach(_.send(latests))
+
+    jsonResponse
   }
 
   @cask.websocket("/subscribe")
@@ -58,8 +59,8 @@ class MessagesRoutes(
     cask.WsHandler { chan =>
       subscribers += chan
 
-      val latests = latestMessagesAsString(20)
-      subscribers.foreach(_.send(cask.Ws.Text(latests)))
+      val latests = latestMessagesAsCaskWSString(20)
+      subscribers.foreach(_.send(latests))
 
       cask.WsActor { case cask.Ws.Close(_, _) =>
         subscribers -= chan
@@ -73,16 +74,18 @@ class MessagesRoutes(
     cask.Redirect("/")
   }
 
-  private def latestMessagesAsString(number: Int) = {
+  private def latestMessagesAsCaskWSString(number: Int): cask.Ws.Text = {
     val messages = msgSvc.getLatestMessages(number)
 
-    messages match {
-      case Nil => Layouts.placeholderContent("No message yet").toString
+    val text = messages match {
+      case Nil => Layouts.placeholderContent("No message where received yet").toString
       case _ =>
-        messages.reverse
+        messages
           .map((user, msg) => Layouts.message(user, msg).toString)
           .mkString
     }
+
+    cask.Ws.Text(text)
   }
 
   private def processMessage(msg: String)(session: Session) = {
@@ -90,8 +93,8 @@ class MessagesRoutes(
     val (mentionnedUser, content) = parseMessageMention(msg)
 
     mentionnedUser match {
+      // Mention of bot
       case Some("@bot") => {
-        // Get the bot reply
         val tokens = tokenizerSvc.tokenize(content)
 
         try {
@@ -105,31 +108,24 @@ class MessagesRoutes(
           )
 
           // Identification message must not be analyzed to prevent changes of session user
-          expr match {
-            case Auth(username) => {
-              msgSvc.add(
-                "bot",
-                Layouts.messageContent("Hello " + username, None),
-                session.getCurrentUser,
-                None,
-                Some(userMsgId)
-              )
-              ujson.Obj("success" -> true, "err" -> "")
-            }
-
+          val messageContent = expr match {
+            case Auth(username) =>
+              Layouts.messageContent("Hello " + username, None)
             case _ => {
               // Get the reply of the bot
-              val reply = analyzerSvc.reply(session)(expr)
-              msgSvc.add(
-                "bot",
-                Layouts.messageContent(reply, None),
-                session.getCurrentUser,
-                None,
-                Some(userMsgId)
-              )
-              ujson.Obj("success" -> true, "err" -> "")
+              Layouts.messageContent(analyzerSvc.reply(session)(expr), None)
             }
           }
+
+          // Send the reply of the bot
+          msgSvc.add(
+            "bot",
+            messageContent,
+            session.getCurrentUser,
+            None,
+            Some(userMsgId)
+          )
+          ujson.Obj("success" -> true, "err" -> "")
 
         } catch {
           case e: Exception =>
@@ -137,6 +133,7 @@ class MessagesRoutes(
         }
       }
 
+      // Mention of any user
       case Some(anyUser) => {
         msgSvc.add(
           session.getCurrentUser.get,
@@ -145,6 +142,7 @@ class MessagesRoutes(
         ujson.Obj("success" -> true, "err" -> "")
       }
 
+      // No mention
       case None => {
         msgSvc.add(
           session.getCurrentUser.get,

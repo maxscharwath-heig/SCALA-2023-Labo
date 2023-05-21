@@ -69,12 +69,12 @@ class MessageImpl extends MessageService:
       exprType: Option[ExprTree] = None,
       replyToId: Option[Long] = None
   ): Long = {
-    messages = Message(sender, msg, mention, exprType, replyToId) :: messages
+    messages = messages :+ Message(sender, msg, mention, exprType, replyToId)
     id += 1
     id
   }
 
   override def getLatestMessages(n: Int) =
-    messages.take(n).map(m => (m.sender, m.msg))
+    messages.takeRight(n).map(m => (m.sender, m.msg))
 
   override def deleteHistory(): Unit = messages = Nil
