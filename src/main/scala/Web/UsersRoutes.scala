@@ -13,16 +13,6 @@ import Data.{AccountService, SessionService, Session}
   */
 class UsersRoutes(accountSvc: AccountService,
                   sessionSvc: SessionService)(implicit val log: cask.Logger) extends cask.Routes:
-    // TODO - Part 3 Step 3a: Display a login form and register form page for the following URL: `/login`.
-    // TODO - Part 3 Step 3b: Process the login information sent by the form with POST to `/login`,
-    //      set the user in the provided session (if the user exists) and display a successful or
-    //      failed login page.
-    //
-    // TODO - Part 3 Step 3c: Process the register information sent by the form with POST to `/register`,
-    //      create the user, set the user in the provided session and display a successful
-    //      register page.
-    //
-    // TODO - Part 3 Step 3d: Reset the current session and display a successful logout page.
 
     initialize()
 end UsersRoutes
