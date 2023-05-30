@@ -1,6 +1,6 @@
 package Web
 
-import Chat.ExprTree.Auth
+import Chat.ExprTree.{Auth, Command}
 import Chat.{AnalyzerService, ExprTree, Parser, TokenizerService}
 import Data.{AccountService, MessageService, Session, SessionService}
 import cask.endpoints.{WsChannelActor, WsHandler}
@@ -10,19 +10,26 @@ import scalatags.Text
 
 import scala.collection.mutable.ListBuffer
 import scala.quoted.ToExpr.NoneToExpr
+import scala.concurrent.ExecutionContext.Implicits.global
 
 /** Assembles the routes dealing with the message board:
- *   - One route to display the home page
- *   - One route to send the new messages as JSON
- *   - One route to subscribe with websocket to new messages
- *
- * @param tokenizerSvc the tokenizer service
- * @param analyzerSvc the analyzer service
- * @param msgSvc the message service
- * @param accountSvc the account service
- * @param sessionSvc the session service
- * @param log the logger
- */
+  *   - One route to display the home page
+  *   - One route to send the new messages as JSON
+  *   - One route to subscribe with websocket to new messages
+  *
+  * @param tokenizerSvc
+  *   the tokenizer service
+  * @param analyzerSvc
+  *   the analyzer service
+  * @param msgSvc
+  *   the message service
+  * @param accountSvc
+  *   the account service
+  * @param sessionSvc
+  *   the session service
+  * @param log
+  *   the logger
+  */
 class MessagesRoutes(
     tokenizerSvc: TokenizerService,
     analyzerSvc: AnalyzerService,
@@ -126,22 +133,57 @@ class MessagesRoutes(
     )
 
     // Identification message must not be analyzed to prevent changes of session user
-    val messageContent = expr match {
-      case Auth(username) =>
-        Layouts.messageContent(s"Hello ${username}", None)
-      case _ =>
-        // Get the reply of the bot
-        Layouts.messageContent(analyzerSvc.reply(session)(expr), None)
-    }
+    expr match {
+      case Auth(username) => {
+        msgSvc.add(
+          "bot",
+          Layouts.messageContent(s"Hello ${username}", None),
+          session.getCurrentUser,
+          None,
+          Some(userMsgId)
+        )
+      }
 
-    // Send the reply of the bot
-    msgSvc.add(
-      "bot",
-      messageContent,
-      session.getCurrentUser,
-      None,
-      Some(userMsgId)
-    )
+      case Command(products) => {
+        // Commands are treated as Futures
+        val requestReply = analyzerSvc.reply(session)(expr)
+        val directAnswer = requestReply._1
+
+        val directAnswerId = msgSvc.add(
+          "bot",
+          Layouts.messageContent(directAnswer, None),
+          session.getCurrentUser,
+          None,
+          None
+        )
+        notifySubscribers(20)
+
+        val futureAnswer = requestReply._2
+
+        futureAnswer.get.map(answer => {
+          msgSvc.add(
+            "bot",
+            Layouts.messageContent(answer, mentionedUser),
+            session.getCurrentUser,
+            None,
+            Some(directAnswerId)
+          )
+
+          notifySubscribers(20)
+        })
+
+      }
+      case _ => {
+        msgSvc.add(
+          "bot",
+          Layouts.messageContent(analyzerSvc.reply(session)(expr)._1, None),
+          session.getCurrentUser,
+          None,
+          Some(userMsgId)
+        )
+      }
+
+    }
 
     jsonResponse(success = true)
   }
