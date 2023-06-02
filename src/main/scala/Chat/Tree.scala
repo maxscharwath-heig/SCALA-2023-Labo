@@ -1,4 +1,4 @@
-// SCALA - Labo 2
+// SCALA - Labo 4
 // Nicolas Crausaz & Maxime Scharwath
 
 package Chat
@@ -21,7 +21,7 @@ object ExprTree:
   case object Solde extends ExprTree
 
   // Products
-  case class Product(name: String, brand: String, quantity: Int)
+  case class Product(name: String, brand: Option[String], quantity: Int)
       extends ExprTree
 
   // Operators

@@ -1,4 +1,4 @@
-// SCALA - Labo 2
+// SCALA - Labo 4
 // Nicolas Crausaz & Maxime Scharwath
 
 package Chat
@@ -45,7 +45,7 @@ class Parser(tokenized: Tokenized):
   private def parseProduct(): ExprTree = {
     val quantity = if curToken == NUM then eat(NUM).toInt else expected(NUM)
     val name = if curToken == PRODUIT then eat(PRODUIT) else expected(PRODUIT)
-    val brand = if curToken == MARQUE then eat(MARQUE) else ""
+    val brand = if curToken == MARQUE then Some(eat(MARQUE)) else None
 
     Product(name, brand, quantity)
   }

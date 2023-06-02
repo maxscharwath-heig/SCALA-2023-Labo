@@ -1,4 +1,4 @@
-// SCALA - Labo 2
+// SCALA - Labo 4
 // Nicolas Crausaz & Maxime Scharwath
 
 package Chat
@@ -7,6 +7,7 @@ import Data.{AccountService, ProductService, Session}
 import ExprTree._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
+import scala.concurrent.duration._
 
 class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
 
@@ -16,7 +17,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
   // Helper method to compute the price of a product
   private def computeProductPrice(
       name: String,
-      brand: String,
+      brand: Option[String],
       quantity: Int
   ): Double =
     quantity * productSvc.getPrice(name, brand)
@@ -30,45 +31,21 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
     s"Bonjour, $name !"
   }
 
-  // Helper method to process a command
-  private def processCommand(
-      session: Session,
-      products: ExprTree,
-      inner: ExprTree => (String, Option[Future[String]])
-  ): (String, Option[Future[String]]) =
-    session.getCurrentUser match {
-      case Some(user) => {
-        val finalPrice = computePrice(products)
-
-        if (finalPrice > accountSvc.getAccountBalance(user))
-          (
-            "Vous n'avez pas assez d'argent pour effectuer cette commande.",
-            None
-          )
-        else {
-          val futureAnswer = Future {
-            accountSvc.purchase(user, finalPrice)
-
-            // s"Voici donc ${inner(products)._1} ! Cela coûte CHF $finalPrice et votre nouveau solde est de CHF ${accountSvc
-            //     .getAccountBalance(user)}."
-
-            s"La commande de ${inner(products)._1} est prête. Cela coûte $finalPrice.-"
-
-            // TODO: ajouter le cas de la commande partielle
-
-          }.recover(_ =>
-            s"La commande de ${inner(products)._1} ne peut pas être délivrée"
-          )
-
-          (
-            s"Votre commande est en cours de préparation : ${inner(products)._1}",
-            Some(futureAnswer)
-          )
-
-        }
+  private def prepare(products: ExprTree): Future[ExprTree] = {
+    products match
+      case Product(name, brand, quantity) => {
+        val preparation = productSvc.startPreparation(name, brand)
+        preparation.map(_ => products)
       }
-      case None => ("Veuillez d'abord vous identifier.", None)
-    }
+      // TODO: handle this case
+      // Launch prepare of left and right, if one fails => partial order
+      // case And(left, right) => {
+
+      // }
+      case Or(left, right) =>
+        if computePrice(left) <= computePrice(right) then prepare(left)
+        else prepare(right)
+  }
 
   // Helper method to get the account balance
   private def getAccountBalance(session: Session): String =
@@ -113,9 +90,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
       case Price(expr) => (s"Cela coûte CHF ${computePrice(expr)}.", None)
       case Product(name, brand, quantity) =>
         (
-          s"$quantity $name ${
-              if (brand.isEmpty()) productSvc.getDefaultBrand(name) else brand
-            }",
+          s"$quantity $name ${brand.getOrElse(productSvc.getDefaultBrand(name))}",
           None
         )
       case Auth(name)       => (handleAuth(session, name), None)
@@ -125,7 +100,33 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
         if (computePrice(left) < computePrice(right)) inner(left)
         else inner(right)
       case Command(products) => {
-        processCommand(session, products, inner)
+        session.getCurrentUser match {
+          case Some(user) => {
+            val orderPrice = computePrice(products)
+            if (orderPrice > accountSvc.getAccountBalance(user)) {
+              (
+                "Vous n'avez pas assez d'argent pour effectuer cette commande.",
+                None
+              )
+            } else {
+              val order = prepare(products)
+                .map(t => {
+                  accountSvc.purchase(user, orderPrice)
+                  s"La commande de ${inner(products)._1} est prête. Cela coute $orderPrice"
+                  // TODO: handle partial orders
+                })
+                .recover(_ =>
+                  s"La commande de ${inner(products)._1} ne peut pas être délivrée"
+                )
+
+              (
+                s"Votre commande est en cours de préparation : ${inner(products)._1}",
+                Some(order)
+              )
+            }
+          }
+          case None => ("Veuillez d'abord vous identifier.", None)
+        }
       }
     }
   }

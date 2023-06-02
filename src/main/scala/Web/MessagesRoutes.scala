@@ -1,3 +1,6 @@
+// SCALA - Labo 4
+// Nicolas Crausaz & Maxime Scharwath
+
 package Web
 
 import Chat.ExprTree.{Auth, Command}
@@ -151,19 +154,18 @@ class MessagesRoutes(
 
         val directAnswerId = msgSvc.add(
           "bot",
-          Layouts.messageContent(directAnswer, None),
-          session.getCurrentUser,
-          None,
-          None
+          Layouts.messageContent(directAnswer, None)
         )
+
         notifySubscribers(20)
 
         val futureAnswer = requestReply._2
 
         futureAnswer.get.map(answer => {
+          val answerTo = Some(s"@${session.getCurrentUser.get} ")
           msgSvc.add(
             "bot",
-            Layouts.messageContent(answer, mentionedUser),
+            Layouts.messageContent(answer, answerTo),
             session.getCurrentUser,
             None,
             Some(directAnswerId)
