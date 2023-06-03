@@ -18,11 +18,11 @@ class ProductImpl extends ProductService:
   // Available beers and their prices
   private val beers = Map(
     "boxer"      -> (1.0, Duration(1, SECONDS)),
-    "farmer"     -> (1.0, Duration(1, SECONDS)),
-    "wittekop"   -> (2.0, Duration(1, SECONDS)),
+    "farmer"     -> (1.0, Duration(1.5, SECONDS)),
+    "wittekop"   -> (2.0, Duration(1.5, SECONDS)),
     "punkipa"    -> (3.0, Duration(2, SECONDS)),
     "jackhammer" -> (3.0, Duration(2, SECONDS)),
-    "tenebreuse" -> (4.0, Duration(2, SECONDS))
+    "tenebreuse" -> (4.0, Duration(2.3, SECONDS))
   )
 
   // Available croissants and their prices

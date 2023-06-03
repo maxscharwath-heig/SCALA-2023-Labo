@@ -1,6 +1,12 @@
 // SCALA - Labo 4
 // Nicolas Crausaz & Maxime Scharwath
 
+// TODO: Par exemple : Si on commande 2 croissants maison et 1 croissant caillier, la préparation
+// du croissant caillier et du premier croissant maison commence en même temps alors que la
+// préparation du deuxième croissant maison commence quand le premier croissant maison est
+// prêt.
+// -> TODO: Prendre en compte le nombre de produits commandés
+
 package Chat
 
 import Data.{AccountService, ProductService, Session}
@@ -8,8 +14,13 @@ import ExprTree._
 import scala.concurrent.ExecutionContext.Implicits.global
 import scala.concurrent.Future
 import scala.concurrent.duration._
+import scala.util.Failure
 
 class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
+
+  // Helper enum to handle the three cases of preparation status
+  private enum PreparationStatus:
+    case Success, Partial, Failure
 
   // Default solde for new users
   private val DEFAULT_SOLDE = 30.0
@@ -31,20 +42,45 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
     s"Bonjour, $name !"
   }
 
-  private def prepare(products: ExprTree): Future[ExprTree] = {
+  private def prepare(
+      products: ExprTree
+  ): (Future[(Option[ExprTree], PreparationStatus)]) = {
     products match
       case Product(name, brand, quantity) => {
         val preparation = productSvc.startPreparation(name, brand)
-        preparation.map(_ => products)
+        preparation
+          .map { _ =>
+            (Some(Product(name, brand, quantity)), PreparationStatus.Success)
+          }
+          .recover(_ => (None, PreparationStatus.Failure))
       }
-      // TODO: handle this case
-      // Launch prepare of left and right, if one fails => partial order
-      // case And(left, right) => {
 
-      // }
+      case And(left, right) => {
+        val tasks = Future.sequence(Seq(prepare(left), prepare(right)))
+        tasks.map { results =>
+          // All success
+          if results.forall(_._2 == PreparationStatus.Success) then
+            (Some(And(left, right)), PreparationStatus.Success)
+
+          // All failed
+          else if results.forall(_._2 == PreparationStatus.Failure) then
+            (None, PreparationStatus.Failure)
+
+          // One failed, return the one that didn't
+          else
+            (
+              results.filter(_._2 != PreparationStatus.Failure).head._1,
+              PreparationStatus.Partial
+            )
+        }
+      }
+
       case Or(left, right) =>
         if computePrice(left) <= computePrice(right) then prepare(left)
         else prepare(right)
+
+      // Nothing to prepare
+      case _ => Future.successful((Some(products), PreparationStatus.Success))
   }
 
   // Helper method to get the account balance
@@ -93,9 +129,10 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
           s"$quantity $name ${brand.getOrElse(productSvc.getDefaultBrand(name))}",
           None
         )
-      case Auth(name)       => (handleAuth(session, name), None)
-      case Solde            => (getAccountBalance(session), None)
-      case And(left, right) => (s"${inner(left)} et ${inner(right)}", None)
+      case Auth(name) => (handleAuth(session, name), None)
+      case Solde      => (getAccountBalance(session), None)
+      case And(left, right) =>
+        (s"${inner(left)._1} et ${inner(right)._1}", None)
       case Or(left, right) =>
         if (computePrice(left) < computePrice(right)) inner(left)
         else inner(right)
@@ -104,23 +141,34 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
           case Some(user) => {
             val orderPrice = computePrice(products)
             if (orderPrice > accountSvc.getAccountBalance(user)) {
+              // TODO: check the error on the client side when this case appears
               (
                 "Vous n'avez pas assez d'argent pour effectuer cette commande.",
                 None
               )
             } else {
+              val baseOrder = inner(products)._1
               val order = prepare(products)
-                .map(t => {
-                  accountSvc.purchase(user, orderPrice)
-                  s"La commande de ${inner(products)._1} est prête. Cela coute $orderPrice"
-                  // TODO: handle partial orders
-                })
-                .recover(_ =>
-                  s"La commande de ${inner(products)._1} ne peut pas être délivrée"
-                )
+                .map(task => {
+                  task._2 match
+                    case PreparationStatus.Success => {
+                      accountSvc.purchase(user, orderPrice)
+                      s"La commande de ${baseOrder} est prête. Cela coute $orderPrice.-"
+                    }
 
+                    case PreparationStatus.Partial => {
+                      val ajustedPrice = computePrice(task._1.get)
+                      val adjustedOrder = inner(task._1.get)._1
+                      accountSvc.purchase(user, ajustedPrice)
+                      s"La commande de ${baseOrder} est partiellement prête. Voici ${adjustedOrder}. Cela coute $ajustedPrice.-"
+                    }
+
+                    case PreparationStatus.Failure => {
+                      s"La commande de ${baseOrder} ne peut pas être délivrée."
+                    }
+                })
               (
-                s"Votre commande est en cours de préparation : ${inner(products)._1}",
+                s"Votre commande est en cours de préparation: ${baseOrder}",
                 Some(order)
               )
             }

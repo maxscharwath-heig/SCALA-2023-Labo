@@ -57,7 +57,7 @@ class MessagesRoutes(
         success = false,
         err = "You must be logged in to send messages"
       )
-    else if (msg.isEmpty)
+    else if (msg.trim.isEmpty)
       jsonResponse(success = false, err = "A message cannot be empty")
     else
       val response = processMessage(msg)(session)

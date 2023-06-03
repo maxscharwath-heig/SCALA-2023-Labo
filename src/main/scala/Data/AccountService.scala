@@ -1,6 +1,10 @@
+// SCALA - Labo 4
+// Nicolas Crausaz & Maxime Scharwath
+
 package Data
 
 import scala.collection.mutable
+import scala.collection.concurrent.TrieMap
 
 trait AccountService:
   /** Retrieve the balance of a given account
@@ -38,8 +42,8 @@ trait AccountService:
   def purchase(user: String, amount: Double): Double
 
 class AccountImpl extends AccountService:
-  // Storing users and their balance in a mutable map
-  private val accounts: mutable.Map[String, Double] = mutable.Map()
+
+  private val accounts = TrieMap[String, Double]()
 
   def getAccountBalance(user: String): Double = accounts(user)
   def addAccount(user: String, balance: Double): Unit = accounts(user) = balance
