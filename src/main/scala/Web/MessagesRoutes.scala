@@ -66,6 +66,7 @@ class MessagesRoutes(
   }
 
   private def notifySubscribers(number: Int): Unit = {
+    print("Notifying subscribers", subscribers.length)
     subscribers.foreach(
       _.send(latestMessagesAsCaskWSString(number))
     )
@@ -226,8 +227,9 @@ class MessagesRoutes(
   }
 
   @cask.get("/clearHistory")
-  def clearHistory(): Response[String] = {
+  def clearHistory() = {
     msgSvc.deleteHistory()
+    notifySubscribers(0)
     cask.Redirect("/")
   }
 
