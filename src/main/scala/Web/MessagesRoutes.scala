@@ -66,7 +66,6 @@ class MessagesRoutes(
   }
 
   private def notifySubscribers(number: Int): Unit = {
-    print("Notifying subscribers", subscribers.length)
     subscribers.foreach(
       _.send(latestMessagesAsCaskWSString(number))
     )

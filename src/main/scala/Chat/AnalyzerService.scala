@@ -47,12 +47,45 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
   ): (Future[(Option[ExprTree], PreparationStatus)]) = {
     products match
       case Product(name, brand, quantity) => {
-        val preparation = productSvc.startPreparation(name, brand)
-        preparation
-          .map { _ =>
-            (Some(Product(name, brand, quantity)), PreparationStatus.Success)
+        // Running the preparation sequentially
+        val preparations = (1 to quantity).foldLeft(
+          Future.successful(List.empty[PreparationStatus])
+        ) { (previousFuture, _) =>
+          previousFuture.flatMap { list =>
+            productSvc
+              .startPreparation(name, brand)
+              .map(_ => PreparationStatus.Success)
+              .recover(_ => PreparationStatus.Failure)
+              .map(result => list :+ result)
           }
-          .recover(_ => (None, PreparationStatus.Failure))
+        }
+
+        preparations.flatMap(results => {
+          // All success
+          if results.forall(_ == PreparationStatus.Success) then
+            Future.successful(
+              (Some(Product(name, brand, quantity)), PreparationStatus.Success)
+            )
+
+          // All failed
+          else if results.forall(_ == PreparationStatus.Failure) then
+            Future.successful((None, PreparationStatus.Failure))
+
+          // Some failed
+          else
+            Future.successful(
+              (
+                Some(
+                  Product(
+                    name,
+                    brand,
+                    results.count(_ == PreparationStatus.Success)
+                  )
+                ),
+                PreparationStatus.Partial
+              )
+            )
+        })
       }
 
       case And(left, right) => {

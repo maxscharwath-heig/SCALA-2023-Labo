@@ -22,13 +22,13 @@ class ProductImpl extends ProductService:
     "wittekop"   -> (2.0, Duration(1.5, SECONDS)),
     "punkipa"    -> (3.0, Duration(2, SECONDS)),
     "jackhammer" -> (3.0, Duration(2, SECONDS)),
-    "tenebreuse" -> (4.0, Duration(2.3, SECONDS))
+    "tenebreuse" -> (4.0, Duration(3, SECONDS))
   )
 
   // Available croissants and their prices
   private val croissants = Map(
     "maison"  -> (2.0, Duration(1, SECONDS)),
-    "cailler" -> (2.0, Duration(1.5, SECONDS))
+    "cailler" -> (2.0, Duration(2, SECONDS))
   )
 
   def getPrice(product: ProductName, brand: Option[BrandName]): Double = {
