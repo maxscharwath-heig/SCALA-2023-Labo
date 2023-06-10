@@ -125,7 +125,6 @@ object Layouts:
   ) = html(
     htmlHead(),
     body(
-      // TODO: remove duplication with navbar
       tag("nav")(
         a(href := "/", cls := "nav-brand")("Bot-tender"),
         navLink("/", "Go to the message board")

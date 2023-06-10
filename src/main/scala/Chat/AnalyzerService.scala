@@ -1,12 +1,6 @@
 // SCALA - Labo 4
 // Nicolas Crausaz & Maxime Scharwath
 
-// TODO: Par exemple : Si on commande 2 croissants maison et 1 croissant caillier, la préparation
-// du croissant caillier et du premier croissant maison commence en même temps alors que la
-// préparation du deuxième croissant maison commence quand le premier croissant maison est
-// prêt.
-// -> TODO: Prendre en compte le nombre de produits commandés
-
 package Chat
 
 import Data.{AccountService, ProductService, Session}
@@ -41,8 +35,6 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
     session.setCurrentUser(name)
     s"Bonjour, $name !"
   }
-
-  private def handleCommand(products: ExprTree) = {}
 
   private def prepare(
       products: ExprTree
@@ -212,6 +204,7 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
                       s"La commande de ${baseOrder} ne peut pas être délivrée."
                     }
                 })
+
               (
                 s"Votre commande est en cours de préparation: ${baseOrder}",
                 Some(order)
