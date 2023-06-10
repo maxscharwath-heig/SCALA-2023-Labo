@@ -42,6 +42,8 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
     s"Bonjour, $name !"
   }
 
+  private def handleCommand(products: ExprTree) = {}
+
   private def prepare(
       products: ExprTree
   ): (Future[(Option[ExprTree], PreparationStatus)]) = {
@@ -89,22 +91,34 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
       }
 
       case And(left, right) => {
-        val tasks = Future.sequence(Seq(prepare(left), prepare(right)))
-        tasks.map { results =>
-          // All success
-          if results.forall(_._2 == PreparationStatus.Success) then
-            (Some(And(left, right)), PreparationStatus.Success)
+        // Running the preparations in parallel
+        val leftPreparation = prepare(left)
+        val rightPreparation = prepare(right)
 
-          // All failed
-          else if results.forall(_._2 == PreparationStatus.Failure) then
-            (None, PreparationStatus.Failure)
+        for {
+          (leftResult, leftStatus) <- leftPreparation
+          (rightResult, rightStatus) <- rightPreparation
+        } yield {
+          (leftStatus, rightStatus) match {
+            // Both success
+            case (PreparationStatus.Success, PreparationStatus.Success) =>
+              (Some(And(left, right)), PreparationStatus.Success)
 
-          // One failed, return the one that didn't
-          else
-            (
-              results.filter(_._2 != PreparationStatus.Failure).head._1,
-              PreparationStatus.Partial
-            )
+            // Both failed
+            case (PreparationStatus.Failure, PreparationStatus.Failure) =>
+              (None, PreparationStatus.Failure)
+
+            // Both partial
+            case (PreparationStatus.Partial, PreparationStatus.Partial) =>
+              (
+                Some(And(leftResult.get, rightResult.get)),
+                PreparationStatus.Partial
+              )
+
+            // One failed, return the one that didn't
+            case _ =>
+              (leftResult.orElse(rightResult), PreparationStatus.Partial)
+          }
         }
       }
 
@@ -174,10 +188,8 @@ class AnalyzerService(productSvc: ProductService, accountSvc: AccountService):
           case Some(user) => {
             val orderPrice = computePrice(products)
             if (orderPrice > accountSvc.getAccountBalance(user)) {
-              // TODO: check the error on the client side when this case appears
-              (
-                "Vous n'avez pas assez d'argent pour effectuer cette commande.",
-                None
+              throw new Exception(
+                "Vous n'avez pas assez d'argent pour effectuer cette commande."
               )
             } else {
               val baseOrder = inner(products)._1

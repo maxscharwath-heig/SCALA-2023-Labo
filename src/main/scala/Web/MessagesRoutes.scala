@@ -135,8 +135,8 @@ class MessagesRoutes(
       Some(expr)
     )
 
-    // Identification message must not be analyzed to prevent changes of session user
     expr match {
+      // Identification message must not be analyzed to prevent changes of session user
       case Auth(username) => {
         msgSvc.add(
           "bot",
