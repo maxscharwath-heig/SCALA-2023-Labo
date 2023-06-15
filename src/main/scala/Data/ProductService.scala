@@ -15,7 +15,7 @@ trait ProductService:
   def startPreparation(product: ProductName, brand: Option[BrandName]): Future[Unit]
 
 class ProductImpl extends ProductService:
-  // Available beers and their prices
+  // Available beers with their prices and preparation times
   private val beers = Map(
     "boxer"      -> (1.0, Duration(1, SECONDS)),
     "farmer"     -> (1.0, Duration(1.5, SECONDS)),
@@ -25,7 +25,7 @@ class ProductImpl extends ProductService:
     "tenebreuse" -> (4.0, Duration(3, SECONDS))
   )
 
-  // Available croissants and their prices
+  // Available croissants with their prices and preparation times
   private val croissants = Map(
     "maison"  -> (2.0, Duration(1, SECONDS)),
     "cailler" -> (2.0, Duration(2, SECONDS))
