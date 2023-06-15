@@ -4,19 +4,17 @@
 
 # Informations
 
-Dans les itérations précèdentes de Bot-tender, on supposait une commande prête immédiatement. L’objectif
-de ce labo est d’intégrer une gestion de commandes asynchrones en utilisant la classe Future de
-l’API Scala.
+Dans les itérations précèdentes de Bot-tender, on supposait une commande prête immédiatement. L’objectif de ce labo est d’intégrer une gestion de commandes asynchrones en utilisant la classe Future de l’API Scala.
 
 # Choix architecturaux et d’implémentation
 
 ## Préparation des produits
 
-Pour chaque marque de produit, nous avons spécifié un temps de préparation. Nous l'avons fait en modifiant la structure de données qui stocke les produits sous la forme d'un `Map[String, (Double, Duration)]`. Pour appliquer les temps de préparation, nous avons ajouté une méthode `startPreparation` au `ProductService` chargée de préparer une produit de manière asynchrone (future), avec une probabilité 0.5 de réussite.
+Pour chaque marque de produit, nous avons spécifié un temps de préparation. Nous l'avons fait en modifiant la structure de données qui stocke les produits sous la forme d'un `Map[String, (Double, Duration)]`. Pour appliquer les temps de préparation, nous avons ajouté une méthode `startPreparation` au `ProductService` chargée de préparer un produit de manière asynchrone (future), avec une probabilité 0.5 de réussite.
 
 ## AnalyzerService
 
-Le bot recevant une commande est capable de récéptionner une commande et de la préparer dans une Future. Afin de répondre directement au client, le bot renvoie un tuple contenant la réponse immédiate et la réponse future.
+Le bot recevant une commande est capable de réceptionner une commande et de la préparer dans une Future. Afin de répondre directement au client, le bot renvoie un tuple contenant la réponse immédiate et la réponse future.
 
 Comme indiqué au point précédent, une commande peut échouer, ainsi lors de commande de plusieurs produits (n fois le même ou plusieurs produits différents), il est possible que certains produits ne soient pas disponibles. Pour gérer ce cas, nous avons ajouté un enum `PreparationStatus` qui permet de gérer les différents résultats de la préparation des commandes (Success, Partial, Failure).
 
@@ -28,7 +26,7 @@ Voici quelques exemples de réponses possibles avec la commande d'un produit (qu
 
 Chaque produit est préparé de manière séquentielle (un après l'autre)
 
-La commande de plusieurs produits en quantités différentes (ET) à été implementée grâce à l'utilisation de `foldLeft`:
+La commande de plusieurs produits en quantités différentes (ET) a été implémentée grâce à l'utilisation de `foldLeft`:
 
 ```scala
 val preparations = (1 to quantity).foldLeft(
